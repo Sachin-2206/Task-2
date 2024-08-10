@@ -1,0 +1,65 @@
+# Import necessary libraries
+import pandas as pd
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
+
+# Load the Titanic dataset
+url = 'https://raw.githubusercontent.com/datasciencedojo/datasets/master/titanic.csv'
+titanic_df = pd.read_csv(url)
+
+# Preprocess the data
+titanic_df['Age'] = titanic_df['Age'].fillna(titanic_df['Age'].median())
+titanic_df['Embarked'] = titanic_df['Embarked'].fillna(titanic_df['Embarked'].mode()[0])
+
+# Create a new feature 'Has_Cabin' to indicate whether the passenger has a cabin or not
+titanic_df['Has_Cabin'] = titanic_df['Cabin'].notnull().astype(int)
+
+# Create a new feature 'Family_Size' to indicate the size of the passenger's family
+titanic_df['Family_Size'] = titanic_df['SibSp'] + titanic_df['Parch'] + 1
+
+# Create a new feature 'Will_Power' to indicate the passenger's will power (assuming that passengers with a higher fare have a higher will power)
+titanic_df['Will_Power'] = titanic_df['Fare'].apply(lambda x: 1 if x > 100 else 0)
+
+# Create a new feature 'Swimming_Skill' to indicate the passenger's swimming skill (assuming that passengers with a higher age have a lower swimming skill)
+titanic_df['Swimming_Skill'] = titanic_df['Age'].apply(lambda x: 1 if x < 30 else 0)
+
+# Define the features and target variable
+X = titanic_df.drop(['Survived', 'Name', 'Ticket', 'Cabin'], axis=1)
+y = titanic_df['Survived']
+
+# Split the data into training and testing sets
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# Train a random forest classifier model
+rf_model = RandomForestClassifier(n_estimators=100, random_state=42)
+rf_model.fit(X_train, y_train)
+
+# Make predictions on the testing set
+y_pred = rf_model.predict(X_test)
+
+# Evaluate the model
+print("Accuracy:", accuracy_score(y_test, y_pred))
+print("Classification Report:")
+print(classification_report(y_test, y_pred))
+print("Confusion Matrix:")
+print(confusion_matrix(y_test, y_pred))
+
+# Use the model to predict the chances of survival of an individual
+def predict_survival(age, sex, pclass, has_cabin, family_size, will_power, swimming_skill):
+    input_data = pd.DataFrame({'Age': [age], 'Sex': [sex], 'Pclass': [pclass], 'Has_Cabin': [has_cabin], 'Family_Size': [family_size], 'Will_Power': [will_power], 'Swimming_Skill': [swimming_skill]})
+    prediction = rf_model.predict_proba(input_data)[:, 1]
+    return prediction[0]
+
+# Example usage:
+age = 25
+sex = 1  # 1 for male, 0 for female
+pclass = 2
+has_cabin = 1
+family_size = 2
+will_power = 1
+swimming_skill = 1
+
+chance_of_survival = predict_survival(age, sex, pclass, has_cabin, family_size, will_power, swimming_skill)
+print("Chance of survival:", chance_of_survival)
+\\ This code uses a random forest classifier model to predict the chances of survival of an individual based on their features and characteristics. The features used in the model are:
